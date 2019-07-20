@@ -6,9 +6,16 @@
 package cassel.call.manager;
 
 /**
- *
- * @author gustavo
+ * Application to manage call subjects
  */
-public enum Starter {
-    
+public class Starter {
+
+    public static void main(String[] args) {
+        
+        MainWindow frame = new MainWindow();
+        frame.buildGui().setVisible(true);
+        
+
+    }
+
 }
