@@ -11,11 +11,9 @@ package cassel.call.manager;
 public class Starter {
 
     public static void main(String[] args) {
-        
-        MainWindow frame = new MainWindow();
-        frame.buildGui().setVisible(true);
-        
-
+        // Shows window with call and company information
+        new MainWindow()
+                .setVisible(true);
     }
 
 }
