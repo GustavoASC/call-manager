@@ -13,6 +13,7 @@ import javax.swing.JTextArea;
 public class CTextArea extends JTextArea {
 
     public CTextArea() {
+        addFocusListener(new ColoredFocusListener(this));
     }
 
 }

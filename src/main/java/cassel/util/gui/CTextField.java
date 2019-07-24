@@ -17,6 +17,9 @@ public class CTextField extends JTextField {
         Dimension d = new Dimension(200, 20);
         setSize(d);
         setPreferredSize(d);
+        addFocusListener(new ColoredFocusListener(this));
+
     }
+
 
 }

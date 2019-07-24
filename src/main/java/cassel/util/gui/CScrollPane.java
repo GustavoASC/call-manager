@@ -16,13 +16,13 @@ public class CScrollPane extends JScrollPane {
 
     public CScrollPane(Component view) {
         super(view);
-        Dimension d = new Dimension(200, 200);
+        Dimension d = new Dimension(502, 120);
         setSize(d);
         setPreferredSize(d);
     }
 
     public CScrollPane() {
-        Dimension d = new Dimension(200, 200);
+        Dimension d = new Dimension(502, 120);
         setSize(d);
         setPreferredSize(d);
     }

@@ -21,9 +21,10 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.util.List;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -84,7 +85,7 @@ public class MainWindow extends CFrame {
         mainPanel.add(buildCallsPanel(), BorderLayout.CENTER);
         setContentPane(mainPanel);
         setDefaultCloseOperation(CFrame.EXIT_ON_CLOSE);
-        setSize(633, 520);
+        setSize(633, 660);
         return this;
     }
 
@@ -95,9 +96,9 @@ public class MainWindow extends CFrame {
         CPanel companyWrapperPanel = new CPanel(new BorderLayout());
         //
         CPanel companyTitlePanel = new CPanel(new FlowLayout());
-        JLabel title = new JLabel("Empresa");
+        JLabel title = new JLabel("Controle de ligações");
         Font font = title.getFont();
-        title.setFont(new Font(font.getName(), Font.BOLD, 24));
+        title.setFont(new Font(font.getName(), Font.BOLD, 20));
         companyTitlePanel.add(title);
         //
         CPanel formPanel = new CPanel(new FormLayoutManager());
@@ -142,27 +143,20 @@ public class MainWindow extends CFrame {
 
     private JComponent buildCallsPanel() {
         CPanel p = new CPanel(new BorderLayout(10, 10));
-        //        
-        // North part
+        //
         CPanel northPanel = new CPanel(new BorderLayout());
-        // Calls title
         CPanel callTitlePanel = new CPanel(new BorderLayout());
-        CPanel titlePanel = new CPanel();
-        JLabel title = new JLabel("Ligações");
-        Font font = title.getFont();
-        title.setFont(new Font(font.getName(), Font.BOLD, 18));
-        titlePanel.add(title);
-        callTitlePanel.add(titlePanel, BorderLayout.CENTER);
         callTitlePanel.add(new JSeparator(SwingConstants.HORIZONTAL), BorderLayout.NORTH);
         northPanel.add(callTitlePanel, BorderLayout.CENTER);
+        //
         p.add(northPanel, BorderLayout.NORTH);
-        //        
-        // West part
-        p.add(buildCallsTable(), BorderLayout.WEST);
-        //        
-        // East part
-        p.add(buildCallFormPanel(), BorderLayout.CENTER);
-        return p;
+        p.add(buildCallsTable(), BorderLayout.CENTER);
+        //
+        CPanel wrapper = new CPanel();
+        wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
+        wrapper.add(p);
+        wrapper.add(buildCallFormPanel());
+        return wrapper;
     }
 
     /**
@@ -195,24 +189,28 @@ public class MainWindow extends CFrame {
 
             }
         });
-
+        //
+        Dimension d = new Dimension(615, 150);
+        //
         JScrollPane sp = new JScrollPane(table);
-
         sp.setBorder(BorderFactory.createEmptyBorder());
-        sp.setSize(new Dimension(300, 900));
-        sp.setPreferredSize(new Dimension(300, 900));
+        sp.setSize(d);
+        sp.setPreferredSize(d);
+        //
         panel.add(sp);
-
-        panel.setSize(new Dimension(300, 900));
-        panel.setPreferredSize(new Dimension(300, 900));
+        panel.setSize(d);
+        panel.setPreferredSize(d);
         //
         CPanel titlePanel = new CPanel();
-
         titlePanel.add(new JLabel("Histórico de ligações"));
-        wrapperPanel.add(titlePanel, BorderLayout.NORTH);
         //
-
-        wrapperPanel.add(panel, BorderLayout.EAST);
+        CPanel buttons = new CPanel(new FlowLayout(FlowLayout.LEFT));
+        buttons.add(new CButton("Add."));
+        buttons.add(new CButton("Del."));
+        //
+        wrapperPanel.add(titlePanel, BorderLayout.NORTH);
+        wrapperPanel.add(panel, BorderLayout.CENTER);
+        wrapperPanel.add(buttons, BorderLayout.SOUTH);
         return wrapperPanel;
     }
 
@@ -223,8 +221,9 @@ public class MainWindow extends CFrame {
      */
     private JComponent buildCallFormPanel() {
         CPanel wrapper = new CPanel(new BorderLayout());
+        wrapper.setPreferredSize(new Dimension(200, 200));
         // Form itself
-        CPanel formPanel = new CPanel(new FormLayoutManager(1));
+        CPanel formPanel = new CPanel(new FormLayoutManager(2));
         callSubject = new CLabeledField("      Assunto:");
         callDate = new CLabeledField("            Data:");
         callGeneralInfo = new CLabeledArea("Observação:");
@@ -249,7 +248,12 @@ public class MainWindow extends CFrame {
         });
         //
         footer.add(saveButton);
-        // Adds to the wrapper panel
+        // Title and separator panel
+        CPanel titlePanel = new CPanel();
+//        titlePanel.add(new JSeparator(SwingConstants.HORIZONTAL), BorderLayout.NORTH);
+        titlePanel.add(new JLabel("Ligação atual"));
+        //
+        wrapper.add(titlePanel, BorderLayout.NORTH);
         wrapper.add(formPanel, BorderLayout.CENTER);
         wrapper.add(footer, BorderLayout.SOUTH);
         //
