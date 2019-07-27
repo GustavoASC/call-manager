@@ -14,6 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 
 /**
  * Data Access Object of Company information.
@@ -151,14 +152,6 @@ public class CompanyDAO {
             //
             callBeans.add(call);
         }
-        callBeans.add(new CallBean("Primeira ligação")
-                .setDate("01/10/2017")
-                .setGeneralInfo("Essa é minha observação geral"));
-        callBeans.add(new CallBean("Segunda ligação")
-                .setDate("01/10/2017")
-                .setGeneralInfo("Essa é minha observação geral"));
-        
-        
         return callBeans;
     }
 
@@ -166,7 +159,6 @@ public class CompanyDAO {
      * Inserts or updates the specified company information
      *
      * @param target target bean
-     * @throws SQLException if the command fails for any reason
      */
     public void insertOrUpdate(CompanyBean target) {
         try {
@@ -201,23 +193,45 @@ public class CompanyDAO {
      */
     private void insertOrUpdateCalls(String companyName, List<CallBean> calls) {
         ensureConnected();
-        for (CallBean call : calls) {
+        try {
+            removeOldCalls(companyName);
             try {
-                Statement stmt = conn.createStatement();
-                //
-                StringBuilder values = new StringBuilder();
-                values.append("\"").append(companyName).append("\", ");
-                values.append("\"").append(call.getSubject()).append("\", ");
-                values.append("\"").append(call.getDate()).append("\", ");
-                values.append("\"").append(call.getGeneralInfo()).append("\"");
-                //
-                //
-                String commandString = "insert or replace into calls (companyName, subject, date, generalInfo) values (" + values.toString() + ");";
-                stmt.executeUpdate(commandString);
+                for (CallBean call : calls) {
+                    Statement stmt = conn.createStatement();
+                    //
+                    StringBuilder values = new StringBuilder();
+                    values.append("\"").append(companyName).append("\", ");
+                    values.append("\"").append(call.getSubject()).append("\", ");
+                    values.append("\"").append(call.getDate()).append("\", ");
+                    values.append("\"").append(call.getGeneralInfo()).append("\"");
+                    //
+                    //
+                    String commandString = "insert or replace into calls (companyName, subject, date, generalInfo) values (" + values.toString() + ");";
+                    stmt.executeUpdate(commandString);
+                }
             } catch (SQLException ex) {
                 Logger.getLogger(CompanyDAO.class.getName()).log(Level.SEVERE, null, ex);
             }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Erro ao inserir dados: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    /**
+     * Remove old calls from database
+     * 
+     * @param companyName company name
+     */
+    private void removeOldCalls(String companyName) throws SQLException {
+        try {
+            String commandString = "delete from calls where companyName = \"" + companyName + "\"";
+            Statement stmt = conn.createStatement();
+            stmt.executeUpdate(commandString);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Erro ao remover dados antigos: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            throw ex;
+        }
+        
     }
 
     /**

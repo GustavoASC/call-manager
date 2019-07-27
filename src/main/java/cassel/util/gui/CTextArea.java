@@ -14,6 +14,7 @@ public class CTextArea extends JTextArea {
 
     public CTextArea() {
         addFocusListener(new ColoredFocusListener(this));
+        addKeyListener(new ActionFocusMover());
     }
 
 }

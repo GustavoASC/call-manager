@@ -58,6 +58,16 @@ public class CallWindow extends CFrame {
     public boolean isUserConfirmed() {
         return userConfirmed;
     }
+    
+    /**
+     * Disable call fields
+     */
+    public CallWindow disableFields() {
+        callSubject.getField().setEnabled(false);
+        callDate.getField().setEnabled(false);
+        callGeneralInfo.getArea().setEnabled(false);
+        return this;
+    }
 
     /**
      * Builds the call window

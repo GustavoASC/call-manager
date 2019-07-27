@@ -18,8 +18,13 @@ public class CTextField extends JTextField {
         setSize(d);
         setPreferredSize(d);
         addFocusListener(new ColoredFocusListener(this));
-
+        addFocusListener(new SelectAllFocusListener(this));
+        addKeyListener(new ActionFocusMover());
     }
 
+    @Override
+    public String getText() {
+        return super.getText().trim();
+    }
 
 }

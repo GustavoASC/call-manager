@@ -14,6 +14,7 @@ public class CButton extends JButton {
 
     public CButton(String text) {
         super(text);
+        addKeyListener(new ActionFocusMover());
     }
 
 }

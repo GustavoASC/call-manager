@@ -19,11 +19,13 @@ public class CScrollPane extends JScrollPane {
         Dimension d = new Dimension(502, 120);
         setSize(d);
         setPreferredSize(d);
+        addKeyListener(new ActionFocusMover());
     }
 
     public CScrollPane() {
         Dimension d = new Dimension(502, 120);
         setSize(d);
         setPreferredSize(d);
+        addKeyListener(new ActionFocusMover());
     }
 }
