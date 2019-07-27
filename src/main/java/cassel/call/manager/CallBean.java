@@ -11,11 +11,15 @@ package cassel.call.manager;
 public class CallBean {
 
     /* Call subject */
-    private final String subject;
+    private String subject;
     /* Call date */
     private String date;
     /* Call general information */
     private String generalInfo;
+
+    public CallBean() {
+
+    }
 
     public CallBean(String subject) {
         this.subject = subject;
@@ -23,6 +27,10 @@ public class CallBean {
 
     public String getSubject() {
         return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
     }
 
     public String getDate() {

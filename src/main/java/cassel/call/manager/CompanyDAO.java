@@ -7,14 +7,23 @@ package cassel.call.manager;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Data Access Object of Company information
+ * Data Access Object of Company information.
+ * 
+ * <p> This DAO requires the table to be already created.
+ * This can be done with the following DDL:
+ * 
+ * .open /home/gustavo/Documentos/sources/call-manager/database.db
+ * 'create table companies (name text primary key, city text, responsible text, phoneNumber text, email text, responsible2 text, phoneNumber2 test, email2 text);'
+ * 'create table calls (companyName text, subject text, date text, generalInfo text);'
  */
 public class CompanyDAO {
 
@@ -87,34 +96,128 @@ public class CompanyDAO {
      *
      * @param name company name
      * @return company information
+     * @throws SQLException if the command fails for any reason
      */
     public CompanyBean loadCompanyFromName(String name) {
-        ensureConnected();
-        for (int i = 0; i < companies.size(); i++) {
-            CompanyBean bean = companies.get(i);
-            if (bean.getCompany().trim().equals(name.trim())) {
+        try {
+            ensureConnected();
+            //
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("select * from companies where name = '" + name + "'");
+            //
+            if (rs.next()) {
+                //
+                CompanyBean bean = new CompanyBean(name);
+                bean.setCity(rs.getString("city"));
+                bean.setResponsible(rs.getString("responsible"));
+                bean.setPhoneNumber(rs.getString("phoneNumber"));
+                bean.setEmail(rs.getString("email"));
+                bean.setResponsible2(rs.getString("responsible2"));
+                bean.setPhoneNumber2(rs.getString("phoneNumber2"));
+                bean.setEmail2(rs.getString("email2"));
+                //
+                List<CallBean> callBeans = loadCompanyCalls(name);
+                bean.setCalls(callBeans);
                 return bean;
+                //
+            } else {
+                return null;
             }
+        } catch (SQLException ex) {
+            Logger.getLogger(CompanyDAO.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
         }
-        return null;
+    }
+    
+    /**
+     * Load company calls
+     * 
+     * @param companyName company name
+     * @return company calls
+     * @throws SQLException if any error occurs
+     */
+    private List<CallBean> loadCompanyCalls(String companyName) throws SQLException {
+        //
+        List<CallBean> callBeans = new LinkedList<>();
+        //
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select * from calls where companyName = '" + companyName + "'");
+        //
+        while (rs.next()) {
+            //
+            CallBean call = new CallBean(rs.getString("subject"));
+            call.setDate(rs.getString("date"));
+            call.setGeneralInfo(rs.getString("generalInfo"));
+            //
+            callBeans.add(call);
+        }
+        callBeans.add(new CallBean("Primeira ligação")
+                .setDate("01/10/2017")
+                .setGeneralInfo("Essa é minha observação geral"));
+        callBeans.add(new CallBean("Segunda ligação")
+                .setDate("01/10/2017")
+                .setGeneralInfo("Essa é minha observação geral"));
+        
+        
+        return callBeans;
     }
 
     /**
-     * Insert the specified company
+     * Inserts or updates the specified company information
      *
      * @param target target bean
+     * @throws SQLException if the command fails for any reason
      */
     public void insertOrUpdate(CompanyBean target) {
+        try {
+            ensureConnected();
+            Statement stmt = conn.createStatement();
+            //
+            StringBuilder values = new StringBuilder();
+            values.append("\"").append(target.getCompany()).append("\", ");
+            values.append("\"").append(target.getCity()).append("\", ");
+            values.append("\"").append(target.getResponsible()).append("\", ");
+            values.append("\"").append(target.getPhoneNumber()).append("\", ");
+            values.append("\"").append(target.getEmail()).append("\", ");
+            values.append("\"").append(target.getResponsible2()).append("\", ");
+            values.append("\"").append(target.getPhoneNumber2()).append("\", ");
+            values.append("\"").append(target.getEmail2()).append("\"");
+            //
+            String commandString = "insert or replace into companies (name, city, responsible, phoneNumber, email, responsible2, phoneNumber2, email2) values (" + values.toString() + ");";
+            stmt.executeUpdate(commandString);
+            //
+            // Insert calls
+            insertOrUpdateCalls(target.getCompany(), target.getCalls());
+        } catch (SQLException ex) {
+            Logger.getLogger(CompanyDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    /**
+     * Insert or udpate calls into database
+     * 
+     * @param companyName company name
+     * @param calls company calls
+     */
+    private void insertOrUpdateCalls(String companyName, List<CallBean> calls) {
         ensureConnected();
-        String targetCompany = target.getCompany();
-        for (int i = 0; i < companies.size(); i++) {
-            CompanyBean bean = companies.get(i);
-            if (bean.getCompany().trim().equals(targetCompany.trim())) {
-                companies.set(i, target);
-                return;
+        for (CallBean call : calls) {
+            try {
+                Statement stmt = conn.createStatement();
+                //
+                StringBuilder values = new StringBuilder();
+                values.append("\"").append(companyName).append("\", ");
+                values.append("\"").append(call.getSubject()).append("\", ");
+                values.append("\"").append(call.getDate()).append("\", ");
+                values.append("\"").append(call.getGeneralInfo()).append("\"");
+                //
+                //
+                String commandString = "insert or replace into calls (companyName, subject, date, generalInfo) values (" + values.toString() + ");";
+                stmt.executeUpdate(commandString);
+            } catch (SQLException ex) {
+                Logger.getLogger(CompanyDAO.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        companies.add(target);
     }
 
     /**
@@ -130,7 +233,7 @@ public class CompanyDAO {
     private void ensureConnected() {
         if (conn == null) {
             try {
-                // create a connection to the database
+                // Creates a connection to the database
                 Class.forName("org.sqlite.JDBC");
                 String url = "jdbc:sqlite:database.db";
                 conn = DriverManager.getConnection(url);

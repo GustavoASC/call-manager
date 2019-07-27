@@ -19,10 +19,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -60,12 +61,18 @@ public class MainWindow extends CFrame {
     private JTable table;
     /* List of all company calls */
     private List<CallBean> calls;
-    /* Call subject */
-    private CLabeledField callSubject;
-    /* Call date */
-    private CLabeledField callDate;
-    /* Call general info */
-    private CLabeledArea callGeneralInfo;
+    /* Insert button */
+    private CButton insertButton;
+    /* Update button */
+    private CButton updateButton;
+    /* Load button */
+    private CButton loadButton;
+    /* Delete button */
+    private CButton deleteButton;
+    /* Cancel button */
+    private CButton cancelButton;
+    /* Save button */
+    private CButton saveButton;
 
     /**
      * Creates the main window with the loaded companies from database
@@ -85,7 +92,9 @@ public class MainWindow extends CFrame {
         mainPanel.add(buildCallsPanel(), BorderLayout.CENTER);
         setContentPane(mainPanel);
         setDefaultCloseOperation(CFrame.EXIT_ON_CLOSE);
-        setSize(633, 660);
+        setSize(633, 500);
+        setResizable(false);
+        disableAllButKey();
         return this;
     }
 
@@ -113,14 +122,15 @@ public class MainWindow extends CFrame {
             public void focusLost(FocusEvent event) {
                 String text = company.getField().getText();
                 currentCompany = new CompanyDAO().loadCompanyFromName(text);
-                if (currentCompany != null) {
-                    loadInterfaceFromCompanyInfo(currentCompany);
+                if (currentCompany == null) {
+                    currentCompany = new CompanyBean(text);
                 }
+                loadInterfaceFromCompanyInfo(currentCompany);
+                disableOnlyKey();
             }
         });
-        phoneNumber = new CLabeledField("     Telefone 1:");
         city = new CLabeledField("            Cidade:");
-        phoneNumber = new CLabeledField("     Telefone 2:");
+        phoneNumber = new CLabeledField("        Telefone:");
         phoneNumber2 = new CLabeledField("     Telefone 2:");
         responsible = new CLabeledField("Responsável 1:");
         email = new CLabeledField("         E-mail 1:");
@@ -155,7 +165,6 @@ public class MainWindow extends CFrame {
         CPanel wrapper = new CPanel();
         wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
         wrapper.add(p);
-        wrapper.add(buildCallFormPanel());
         return wrapper;
     }
 
@@ -182,10 +191,6 @@ public class MainWindow extends CFrame {
                 String subject = (String) model.getValueAt(firstRow, 0);
                 String date = (String) model.getValueAt(firstRow, 1);
                 String generalInfo = (String) model.getValueAt(firstRow, 2);
-                //
-                loadInterfaceCallFromBean(new CallBean(subject)
-                        .setDate(date)
-                        .setGeneralInfo(generalInfo));
 
             }
         });
@@ -205,59 +210,86 @@ public class MainWindow extends CFrame {
         titlePanel.add(new JLabel("Histórico de ligações"));
         //
         CPanel buttons = new CPanel(new FlowLayout(FlowLayout.LEFT));
-        buttons.add(new CButton("Add."));
-        buttons.add(new CButton("Del."));
+        insertButton = new CButton("Inserir");
+        insertButton.addActionListener((ActionEvent e) -> {
+            CallWindow callWindow = new CallWindow(new CallBean());
+            callWindow.addWindowListener(new WindowAdapter() {
+
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    if (callWindow.isUserConfirmed()) {
+                        CallBean myBean = callWindow.getCallBean();
+                        //
+                        DefaultTableModel model = (DefaultTableModel) table.getModel();
+                        Object rowData[] = new Object[3];
+                        rowData[0] = myBean.getSubject();
+                        rowData[1] = myBean.getDate();
+                        rowData[2] = myBean.getGeneralInfo();
+                        model.addRow(rowData);
+                    }
+                }
+            });
+            callWindow.setVisible(true);
+        });
+        updateButton = new CButton("Alterar");
+        updateButton.addActionListener((ActionEvent e) -> {
+            //
+            DefaultTableModel model = (DefaultTableModel) table.getModel();
+            //
+            CallBean bean = new CallBean();
+            
+            //
+            CallWindow callWindow = new CallWindow(new CallBean());
+            callWindow.addWindowListener(new WindowAdapter() {
+
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    if (callWindow.isUserConfirmed()) {
+                        CallBean myBean = callWindow.getCallBean();
+                        //
+                        DefaultTableModel model = (DefaultTableModel) table.getModel();
+                        Object rowData[] = new Object[3];
+                        rowData[0] = myBean.getSubject();
+                        rowData[1] = myBean.getDate();
+                        rowData[2] = myBean.getGeneralInfo();
+                        model.addRow(rowData);
+                    }
+                }
+            });
+            callWindow.setVisible(true);
+        });
+        loadButton = new CButton("Consultar");
+        loadButton.addActionListener((ActionEvent e) -> {
+            new CallWindow(new CallBean())
+                    .setVisible(true);
+        });
+        deleteButton = new CButton("Deletar");
+        cancelButton = new CButton("Cancelar");
+        cancelButton.addActionListener((ActionEvent e) -> {
+            disableAllButKey();
+        });
+        buttons.add(insertButton);
+        buttons.add(updateButton);
+        buttons.add(loadButton);
+        buttons.add(deleteButton);
+        buttons.add(cancelButton);
         //
+        saveButton = new CButton("Gravar");
+        saveButton.addActionListener((ActionEvent arg0) -> {
+            int result = JOptionPane.showConfirmDialog(null, "Confirma a gravação dos dados?", "Confirmação", JOptionPane.OK_CANCEL_OPTION);
+            if (result == JOptionPane.OK_OPTION) {
+                loadCompanyBeanFromInterface(currentCompany);
+                new CompanyDAO().insertOrUpdate(currentCompany);
+                JOptionPane.showMessageDialog(null, "Dados gravados com sucesso.");
+                disableAllButKey();
+            }
+            //
+        });
+        buttons.add(saveButton);
         wrapperPanel.add(titlePanel, BorderLayout.NORTH);
         wrapperPanel.add(panel, BorderLayout.CENTER);
         wrapperPanel.add(buttons, BorderLayout.SOUTH);
         return wrapperPanel;
-    }
-
-    /**
-     * Builds the call form panel
-     *
-     * @return JComponent
-     */
-    private JComponent buildCallFormPanel() {
-        CPanel wrapper = new CPanel(new BorderLayout());
-        wrapper.setPreferredSize(new Dimension(200, 200));
-        // Form itself
-        CPanel formPanel = new CPanel(new FormLayoutManager(2));
-        callSubject = new CLabeledField("      Assunto:");
-        callDate = new CLabeledField("            Data:");
-        callGeneralInfo = new CLabeledArea("Observação:");
-        formPanel.add(callSubject, "A");
-        formPanel.add(callDate, "A");
-        formPanel.add(callGeneralInfo, "A");
-        // Footer
-        CPanel footer = new CPanel(new FlowLayout(FlowLayout.RIGHT));
-        footer.add(new CButton("Cancelar"));
-        //
-        CButton saveButton = new CButton("Gravar");
-        saveButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent arg0) {
-                int result = JOptionPane.showConfirmDialog(null, "Confirma a gravação dos dados?", "Confirmação", JOptionPane.OK_CANCEL_OPTION);
-                if (result == JOptionPane.OK_OPTION) {
-                    loadCompanyBeanFromInterface(currentCompany);
-                    new CompanyDAO().insertOrUpdate(currentCompany);
-                    JOptionPane.showMessageDialog(null, "Dados gravados com sucesso.");
-                }
-            }
-        });
-        //
-        footer.add(saveButton);
-        // Title and separator panel
-        CPanel titlePanel = new CPanel();
-//        titlePanel.add(new JSeparator(SwingConstants.HORIZONTAL), BorderLayout.NORTH);
-        titlePanel.add(new JLabel("Ligação atual"));
-        //
-        wrapper.add(titlePanel, BorderLayout.NORTH);
-        wrapper.add(formPanel, BorderLayout.CENTER);
-        wrapper.add(footer, BorderLayout.SOUTH);
-        //
-        return wrapper;
     }
 
     /**
@@ -305,14 +337,43 @@ public class MainWindow extends CFrame {
     }
 
     /**
-     * Load call fields from bean
-     *
-     * @param bean
+     * Disable all fields but company name which is the key field
      */
-    private void loadInterfaceCallFromBean(CallBean bean) {
-        callSubject.getField().setText(bean.getSubject());
-        callDate.getField().setText(bean.getDate());
-        callGeneralInfo.getArea().setText(bean.getGeneralInfo());
+    private void disableOnlyKey() {
+        changeFieldsEnableState(false, true);
+        phoneNumber.requestFocus();
+    }
+
+    /**
+     * Disable all fields but company name which is the key field
+     */
+    private void disableAllButKey() {
+        changeFieldsEnableState(true, false);
+        company.requestFocus();
+    }
+
+    /**
+     * Change window fields state
+     *
+     * @param keyState key statae
+     * @param fieldsState fields state
+     */
+    private void changeFieldsEnableState(boolean keyState, boolean fieldsState) {
+        company.getField().setEnabled(keyState);
+        city.getField().setEnabled(fieldsState);
+        responsible.getField().setEnabled(fieldsState);
+        phoneNumber.getField().setEnabled(fieldsState);
+        email.getField().setEnabled(fieldsState);
+        responsible2.getField().setEnabled(fieldsState);
+        phoneNumber2.getField().setEnabled(fieldsState);
+        email2.getField().setEnabled(fieldsState);
+        table.setEnabled(fieldsState);
+        insertButton.setEnabled(fieldsState);
+        updateButton.setEnabled(fieldsState);
+        loadButton.setEnabled(fieldsState);
+        deleteButton.setEnabled(fieldsState);
+        cancelButton.setEnabled(fieldsState);
+//        saveButton.setEnabled(fieldsState);
     }
 
 }
